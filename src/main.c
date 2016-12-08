@@ -26,12 +26,11 @@
 #include "algos.h"
 
 /* maximum values */
-#define BUFFER_SIZE  40000000
+#define BUFFER_SIZE  80000000
 #define HASH_SIZE    33
 #define MAX_WORD_LEN 14
 
 /* define functions */
-void clear_buf (char *input, int size);
 int get_buffer (char *dest, int dest_size, long *used, FILE *source);
 void monkey_bars (char *buffer, int buff_size, long used, int thread_num);
 
@@ -43,7 +42,7 @@ int main(int argc, char **argv)
 		fprintf(stderr, "You don't have enough memory...\n");
 		return 1;
 	}
-        clear_buf(buffer, BUFFER_SIZE);
+	memset(buffer, 0, BUFFER_SIZE);
 
 	uint8_t finished = 1;
 	long used_bytes;
@@ -57,7 +56,7 @@ int main(int argc, char **argv)
 		monkey_bars(buffer, BUFFER_SIZE, used_bytes, 4);
 
 		/* clean the buffer */
-		clear_buf(buffer, used_bytes);
+		memset(buffer, 0, used_bytes);
 	}
 
 	return 0;
@@ -137,19 +136,4 @@ int get_buffer (char *dest, int dest_size, long *used, FILE *source)
 	*used = i;
 
 	return (c == EOF) ? 0 : 1;
-}
-
-
-/*
- * function : clear_buf
- * purpose  : initialize a buffer
- * input    : char *input <- dynamic
- *          : int size <- size of buffer
- * output   : nothing
- * ASSUMES A CHAR ARRAY!!!!
- */
-void clear_buf (char* input, int size)
-{
-        memset(input, '\0', size);
-        return;
 }
