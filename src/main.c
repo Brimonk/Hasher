@@ -46,6 +46,8 @@ int main(int argc, char **argv)
 
 	uint8_t finished = 1;
 	long used_bytes;
+	long i;
+	char dest[HASH_SIZE] = { 0 };
 
 	while (finished) {
 		/* read into the buffer */
@@ -53,7 +55,19 @@ int main(int argc, char **argv)
 			get_buffer (buffer, BUFFER_SIZE, &used_bytes, stdin);
 
 		/* climb over the super awesome monkey bars */
-		monkey_bars(buffer, BUFFER_SIZE, used_bytes, 4);
+		// monkey_bars(buffer, BUFFER_SIZE, used_bytes, 4);
+		i = 0;
+		while (i < used_bytes) {
+			/* NTLM over the buffer */
+			NTLM_hash (dest, (buffer + i));
+			printf("%s:%s\n", dest, buffer + i);
+			memset(dest, 0, HASH_SIZE);
+
+			/* compare memory with the target hash */
+
+			/* get next string index */
+			i = i + strlen(buffer + i) + 1;
+		}
 
 		/* clean the buffer */
 		memset(buffer, 0, used_bytes);

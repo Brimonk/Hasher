@@ -17,7 +17,7 @@ void NTLM_hash (char *dest, char *key)
 	/* Prepare the string for hash calculation */
 	int i = 0;
 	int length = strlen(key);
-	memset(nt_buffer, 0, 16*4);
+	memset(nt_buffer, 0, 16 * sizeof(unsigned int));
 
 	//The length of key need to be <= 27
 	for(; i<length/2; i++)	
