@@ -25,6 +25,20 @@ Once you have the git repo cloned onto your machine, a simple
 
 will compile the project for you. Because there aren't a bunch of features.
 
+## Usage
+
+hasher takes in a wordlist from `stdin` (pipe in your newline delimited 
+wordlist) and (for now) on `stdout` the output format looks like this:
+
+    hash:plaintext
+
+This allows you to pipe the output into something like 'grep' to actually
+get the output. An example run might be something like this:
+
+    echo -n "hello" | ./hasher | grep 066DDFD4EF0E9CD7C256FE77191EF43C
+
+The thought is that when the hash pops out, you've got the plain text.
+
 ## Hashing Algorithms Included
 
 * NTLM
