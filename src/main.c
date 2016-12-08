@@ -26,7 +26,7 @@
 #include "algos.h"
 
 /* maximum values */
-#define BUFFER_SIZE  4000000000
+#define BUFFER_SIZE  40000000
 #define HASH_SIZE    33
 #define MAX_WORD_LEN 14
 
