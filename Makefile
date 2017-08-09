@@ -1,5 +1,5 @@
-CFILES := src/main.c src/algos.c
-LIBS   := -lssl -lcrypto -lpthread
+CFILES := src/main.c src/algos.c src/sqlite3.c
+LIBS   := -lssl -lcrypto -lpthread -ldl
 OUTPUT := hasher
 
 all:

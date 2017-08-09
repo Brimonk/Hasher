@@ -24,11 +24,13 @@
 #include <pthread.h>
 
 #include "algos.h"
+#include "sqlite3.h"
 
 /* maximum values */
 #define BUFFER_SIZE  80000000
 #define HASH_SIZE    33
 #define MAX_WORD_LEN 14
+#define DB_NAME "passes.db"
 
 /* define functions */
 int get_buffer (char *dest, int dest_size, long *used, FILE *source);
@@ -37,7 +39,8 @@ void monkey_bars (char *buffer, int buff_size, long used, int thread_num);
 /* -------------------------------------------------------------------------- */
 int main(int argc, char **argv)
 {
-        char *buffer = malloc(BUFFER_SIZE);
+	char *buffer = malloc(BUFFER_SIZE);
+	sqlite3 *fd;
 	if (buffer == NULL) {
 		fprintf(stderr, "You don't have enough memory...\n");
 		return 1;
@@ -48,6 +51,22 @@ int main(int argc, char **argv)
 	long used_bytes;
 	long i;
 	char dest[HASH_SIZE] = { 0 };
+
+	/* open a database */
+	sqlite3_open(DB_NAME, &fd);
+
+	/* create the table */
+	sqlite3_exec(
+			fd,
+			"create table passes (\n"
+			"id			integer primary key autoincrement, \n"
+			"plaintext	varchar(32), \n"
+			"lmhash		varchar(32), \n"
+			"nthash		varchar(32)\n);",
+			NULL,
+			NULL,
+			NULL
+			);
 
 	while (finished) {
 		/* read into the buffer */
@@ -73,13 +92,15 @@ int main(int argc, char **argv)
 		memset(buffer, 0, used_bytes);
 	}
 
+	sqlite3_close(fd);
+
 	return 0;
 }
 
 void monkey_bars (char *buffer, int buff_size, long used, int thread_num)
 {
 	long i;
-        char dest[HASH_SIZE];
+    char dest[HASH_SIZE];
 	char *ptrs[thread_num];
 	memset(dest, 0, HASH_SIZE);
 

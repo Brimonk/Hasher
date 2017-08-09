@@ -39,24 +39,24 @@ void NTLM_hash (char *dest, char *key)
 	unsigned int d = INIT_D;
 
 	/* Round 1 */
-	a += (d ^ (b & (c ^ d)))  +  nt_buffer[0]  ;a = (a << 3 ) | (a >> 29);
-	d += (c ^ (a & (b ^ c)))  +  nt_buffer[1]  ;d = (d << 7 ) | (d >> 25);
-	c += (b ^ (d & (a ^ b)))  +  nt_buffer[2]  ;c = (c << 11) | (c >> 21);
-	b += (a ^ (c & (d ^ a)))  +  nt_buffer[3]  ;b = (b << 19) | (b >> 13);
+	a += (d ^ (b & (c ^ d))) +  nt_buffer[0];a = (a << 3 ) | (a >> 29);
+	d += (c ^ (a & (b ^ c))) +  nt_buffer[1];d = (d << 7 ) | (d >> 25);
+	c += (b ^ (d & (a ^ b))) +  nt_buffer[2];c = (c << 11) | (c >> 21);
+	b += (a ^ (c & (d ^ a))) +  nt_buffer[3];b = (b << 19) | (b >> 13);
 
-	a += (d ^ (b & (c ^ d)))  +  nt_buffer[4]  ;a = (a << 3 ) | (a >> 29);
-	d += (c ^ (a & (b ^ c)))  +  nt_buffer[5]  ;d = (d << 7 ) | (d >> 25);
-	c += (b ^ (d & (a ^ b)))  +  nt_buffer[6]  ;c = (c << 11) | (c >> 21);
-	b += (a ^ (c & (d ^ a)))  +  nt_buffer[7]  ;b = (b << 19) | (b >> 13);
+	a += (d ^ (b & (c ^ d)))  +  nt_buffer[4];a = (a << 3 ) | (a >> 29);
+	d += (c ^ (a & (b ^ c)))  +  nt_buffer[5];d = (d << 7 ) | (d >> 25);
+	c += (b ^ (d & (a ^ b)))  +  nt_buffer[6];c = (c << 11) | (c >> 21);
+	b += (a ^ (c & (d ^ a)))  +  nt_buffer[7];b = (b << 19) | (b >> 13);
 
-	a += (d ^ (b & (c ^ d)))  +  nt_buffer[8]  ;a = (a << 3 ) | (a >> 29);
-	d += (c ^ (a & (b ^ c)))  +  nt_buffer[9]  ;d = (d << 7 ) | (d >> 25);
-	c += (b ^ (d & (a ^ b)))  +  nt_buffer[10] ;c = (c << 11) | (c >> 21);
-	b += (a ^ (c & (d ^ a)))  +  nt_buffer[11] ;b = (b << 19) | (b >> 13);
+	a += (d ^ (b & (c ^ d)))  +  nt_buffer[8];a = (a << 3 ) | (a >> 29);
+	d += (c ^ (a & (b ^ c)))  +  nt_buffer[9];d = (d << 7 ) | (d >> 25);
+	c += (b ^ (d & (a ^ b)))  +  nt_buffer[10];c = (c << 11) | (c >> 21);
+	b += (a ^ (c & (d ^ a)))  +  nt_buffer[11];b = (b << 19) | (b >> 13);
 
-	a += (d ^ (b & (c ^ d)))  +  nt_buffer[12] ;a = (a << 3 ) | (a >> 29);
-	d += (c ^ (a & (b ^ c)))  +  nt_buffer[13] ;d = (d << 7 ) | (d >> 25);
-	c += (b ^ (d & (a ^ b)))  +  nt_buffer[14] ;c = (c << 11) | (c >> 21);
+	a += (d ^ (b & (c ^ d)))  +  nt_buffer[12];a = (a << 3 ) | (a >> 29);
+	d += (c ^ (a & (b ^ c)))  +  nt_buffer[13];d = (d << 7 ) | (d >> 25);
+	c += (b ^ (d & (a ^ b)))  +  nt_buffer[14];c = (c << 11) | (c >> 21);
 	b += (a ^ (c & (d ^ a)))  +  nt_buffer[15] ;b = (b << 19) | (b >> 13);
 
 	/* Round 2 */
@@ -125,31 +125,3 @@ void NTLM_hash (char *dest, char *key)
 
         return;
 }
-
-
-
- 
-/*
-const char *string = "The quick brown fox jumped over the lazy dog's back";
- 
- *
- * function : MD5
- * input    : char *dest -- not NULL terminated
- *	      int len    -- length of string in bytes
- * output   : nothing
- * purpose  : use the openssl library to hash passwords into MD5
- * /
-void MD5_hash (char *dest, const char *input, int len)
-{
-	int i;
-	unsigned char result[MD5_DIGEST_LENGTH];
-
-	MD5(input, strlen(input), result);
-
-	// output
-	for(i = 0; i < MD5_DIGEST_LENGTH; i++)
-		sprintf(dest + (i * 2), "%02x", result[i]);
-
-	return;
-}
-*/
