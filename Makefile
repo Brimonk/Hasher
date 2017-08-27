@@ -1,4 +1,4 @@
-CFILES := src/main.c src/algos.c src/sqlite3.c
+CFILES := src/*.c
 LIBS   := -lssl -lcrypto -lpthread -ldl
 OUTPUT := hasher
 
