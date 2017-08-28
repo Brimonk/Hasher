@@ -1,18 +1,11 @@
 /* 
  * Wed Nov 23, 2016 00:11
  *
- * ntlm password cracking thing
- *
- * NOTES
- *
- *	If you can't malloc the memory for the buffer, you may be asking for
- *	too much. You could probably go through and change the type of the
- *	various memory sizes.
+ * nt/lm password lookup creation
  *
  * TODO
  *
  *	buffer input from stdin
- *	dual thread buffer convert ('\n' -> '\0')
  *	multiple threads
  */
 
@@ -36,6 +29,9 @@
 #define BUFFER_SIZE  1024
 #define MAX_WORD_LEN 14
 
+#define TYPE_LM	  0X01
+#define TYPE_NTLM 0x02
+
 void print_to_stdout(char *type, unsigned char *hash, char *plaintext);
 void buff_to_upper(unsigned char *dest, unsigned char *source, int max);
 void char_ptrs_clear(char **ptrs, int length);
@@ -44,12 +40,26 @@ void char_ptrs_clear(char **ptrs, int length);
 int main(int argc, char **argv)
 {
 	int len, i, max;
+	unsigned int type;
 	char plain[BUFFER_SIZE];
 
 	char *ptrs[16] = {0};
 	
 	unsigned char buffer[BUFFER_SIZE];
 	unsigned char dest[BUFFER_SIZE];
+
+	/* check arguments */
+	if (argc < 2) {
+		type = TYPE_LM | TYPE_NTLM;
+	} else {
+		if (strcmp(argv[1], "ntlm") == 0) {
+			type = TYPE_NTLM;
+		}
+
+		if (strcmp(argv[1], "lm") == 0) {
+			type = TYPE_LM;
+		}
+	}
 
 	ptrs[0] = (char *)&buffer[0];
 	ptrs[1] = (char *)&dest[0];
@@ -67,23 +77,27 @@ int main(int argc, char **argv)
 		/* copy to final buffer, to not lose plaintext */
 		memcpy(plain, buffer, strlen((char *)buffer));
 
-		buff_to_upper(&dest[0], &buffer[0], max);
-
 		/* do LMhashing */
-		auth_LMhash((unsigned char *)dest, (unsigned char *)dest, len);
-		print_to_stdout("  LM", &dest[0], plain);
+		if (type & TYPE_LM) {
+			buff_to_upper(&dest[0], &buffer[0], max);
 
-		/* do NTLM hashing */
-		max = (len > (BUFFER_SIZE / 2) ? (BUFFER_SIZE / 2) : len);
-		buffer[(2 * max) - 1] = 0;
-
-		for (i = max - 1; i > 0; i--) {
-			buffer[(i * 2)] = buffer[i];
-			buffer[(i * 2) - 1] = 0;
+			auth_LMhash((unsigned char *)dest, (unsigned char *)dest, len);
+			print_to_stdout("LM", &dest[0], plain);
 		}
 
-		auth_md4Sum(dest, buffer, 2 * max);
-		print_to_stdout("NTLM", &dest[0], plain);
+		/* do NTLM hashing */
+		if (type & TYPE_NTLM) {
+			max = (len > (BUFFER_SIZE / 2) ? (BUFFER_SIZE / 2) : len);
+			buffer[(2 * max) - 1] = 0;
+
+			for (i = max - 1; i > 0; i--) {
+				buffer[(i * 2)] = buffer[i];
+				buffer[(i * 2) - 1] = 0;
+			}
+
+			auth_md4Sum(dest, buffer, 2 * max);
+			print_to_stdout("NT", &dest[0], plain);
+		}
 
 		char_ptrs_clear(&ptrs[0], 3);
 	}
