@@ -29,8 +29,8 @@
 #define BUFFER_SIZE  1024
 #define MAX_WORD_LEN 14
 
-#define TYPE_LM	  0X01
-#define TYPE_NTLM 0x02
+#define TYPE_LM     0X01
+#define TYPE_NTLM   0x02
 
 void print_to_stdout(char *type, unsigned char *hash, char *plaintext);
 void buff_to_upper(unsigned char *dest, unsigned char *source, int max);
