@@ -17,9 +17,6 @@
 #include <ctype.h>
 #include <stdint.h>
 
-
-// #include "platform.h"
-
 #include "DES.h"
 #include "MD4.h"
 #include "MD5.h"
