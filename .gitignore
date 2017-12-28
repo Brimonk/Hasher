@@ -1,4 +1,5 @@
 hasher
+passes.db*
 
 # ignore my ctags
 tags
