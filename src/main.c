@@ -124,9 +124,6 @@ int main(int argc, char **argv)
 		auth_md4Sum(dest, buffer, 2 * max);
 		mk_readable(&dest[0], BUFFER_SIZE);
 
-		printf("LM: %s\n", lmdest);
-		printf("NT: %s\n", dest);
-
 		/* db insert */
 		if (db_trans_insert(db, lmdest, dest)) { exit(1); }
 
