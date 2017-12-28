@@ -21,6 +21,7 @@
 #include "MD4.h"
 #include "MD5.h"
 #include "LMhash.h"
+#include "sqlite3.h"
 
 /* maximum values */
 #define BUFFER_SIZE  1024

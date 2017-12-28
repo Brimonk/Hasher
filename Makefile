@@ -1,5 +1,5 @@
 CFILES := src/*.c
-LIBS   := -lpthread
+LIBS   := -lpthread -ldl
 OUTPUT := hasher
 
 all:
