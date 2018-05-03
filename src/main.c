@@ -37,37 +37,37 @@ void buff_to_upper(unsigned char *dest, unsigned char *source, int max);
 void char_ptrs_clear(char **ptrs, int length);
 int mk_readable(unsigned char *hash, int buflen);
 sqlite3 *db_open(char *db_name);
+
 int db_tbl_create(sqlite3 *db);
 int db_trans_begin(sqlite3 *db);
 int db_trans_commit(sqlite3 *db);
-int db_trans_insert(sqlite3 *db, unsigned char *lm, unsigned char *nt);
+int db_trans_insert(sqlite3 *db, unsigned char *lm, unsigned char *nt,
+		char *plain);
+
+void parse_args(int argc, char **argv, unsigned int *args);
+void print_help();
 
 /* -------------------------------------------------------------------------- */
 int main(int argc, char **argv)
 {
 	int len, i, max;
-	unsigned int type;
+	unsigned int args;
 	char plain[BUFFER_SIZE];
 	sqlite3 *db;
 
 	char *ptrs[16] = {0};
 	
+	char plainbuffer[BUFFER_SIZE];
 	unsigned char buffer[BUFFER_SIZE];
 	unsigned char dest[BUFFER_SIZE];
 	unsigned char lmdest[BUFFER_SIZE];
 
-	/* check arguments */
-	// if (argc < 2) {
-	// 	type = TYPE_LM | TYPE_NTLM;
-	// } else {
-	// 	if (strcmp(argv[1], "ntlm") == 0) {
-	// 		type = TYPE_NTLM;
-	// 	}
+	args = 0;
+	parse_args(argc, argv, &args);
 
-	// 	if (strcmp(argv[1], "lm") == 0) {
-	// 		type = TYPE_LM;
-	// 	}
-	// }
+	if (!args) {
+		return 0;
+	}
 
 	db = db_open(DB_NAME);
 
@@ -97,6 +97,10 @@ int main(int argc, char **argv)
 	char_ptrs_clear(&ptrs[0], 4);
 	for (i = 1; fgets((char *)buffer, BUFFER_SIZE, stdin) == (char *)buffer;
 			i++) {
+		if ('\n' == buffer[len - 1])
+			buffer[len--] = '\0';
+
+		memcpy(plainbuffer, buffer, BUFFER_SIZE);
 		len = (strlen((char *)buffer) > 14) ? 14 : strlen((char *)buffer);
 
 		if ('\n' == buffer[len - 1])
@@ -107,11 +111,6 @@ int main(int argc, char **argv)
 
 		/* copy to final buffer, to not lose plaintext */
 		memcpy(plain, buffer, strlen((char *)buffer));
-
-		/* do MD5 */
-		if (type & TYPE_MD5) {
-			/* put hash back */
-		}
 
 		/* do LMhashing */
 		buff_to_upper(&lmdest[0], &buffer[0], max);
@@ -131,7 +130,7 @@ int main(int argc, char **argv)
 		mk_readable(&dest[0], BUFFER_SIZE);
 
 		/* db insert */
-		if (db_trans_insert(db, lmdest, dest)) { exit(1); }
+		if (db_trans_insert(db, lmdest, dest, plainbuffer)) { exit(1); }
 
 		/* clear buffers */
 		char_ptrs_clear(&ptrs[0], 4);
@@ -157,6 +156,7 @@ int db_tbl_create(sqlite3 *db)
 	char *err_msg;
 	char *sql = "create table if not exists list (" \
 				"id integer primary key asc," \
+				"plaintext text not null," \
 				"lm text not null," \
 				"nt text not null" \
 				");";
@@ -175,13 +175,14 @@ int db_tbl_create(sqlite3 *db)
 	return 0;
 }
 
-int db_trans_insert(sqlite3 *db, unsigned char *lm, unsigned char *nt)
+int db_trans_insert(sqlite3 *db, unsigned char *lm, unsigned char *nt,
+		char *plain)
 {
-	int rc, rc1, rc2, rc3;
-	char *sql = "insert into list(lm, nt) values (?, ?);";
+	int rc, rc1, rc2, rc3, rc4;
+	char *sql = "insert into list(lm, nt, plaintext) values (?, ?, ?);";
 	sqlite3_stmt *stmnt;
 
-	rc = rc1 = rc2 = 0;
+	rc = rc1 = rc2 = rc3 = rc4 = 0; // init all return codes
 	rc = sqlite3_prepare(db, sql, -1, &stmnt, 0);
 
 	if (rc != SQLITE_OK) {
@@ -192,15 +193,16 @@ int db_trans_insert(sqlite3 *db, unsigned char *lm, unsigned char *nt)
 	/* bind parameters */
 	rc1 = sqlite3_bind_text(stmnt, 1, (char *)lm, -1, NULL);
 	rc2 = sqlite3_bind_text(stmnt, 2, (char *)nt, -1, NULL);
+	rc3 = sqlite3_bind_text(stmnt, 3, (char *)plain, -1, NULL);
 
 	if (rc1 != SQLITE_OK || rc2 != SQLITE_OK) {
 		fprintf(stderr, "SQL error: %s\n", sqlite3_errmsg(db));
 		return 1;
 	}
 
-	rc3 = sqlite3_step(stmnt);
+	rc4 = sqlite3_step(stmnt);
 
-	if (rc3 != SQLITE_DONE) {
+	if (rc4 != SQLITE_DONE) {
 		fprintf(stderr, "SQL error: %s\n", sqlite3_errmsg(db));
 		return 1;
 	}
@@ -305,4 +307,42 @@ void buff_to_upper(unsigned char *dest, unsigned char *source, int max)
 
 	for (i = 0; i < max; i++)
 		dest[i] = toupper(source[i]);
+}
+
+/* parse args at the bottom because why not */
+void parse_args(int argc, char **argv, unsigned int *args)
+{
+	char *s;
+
+	while (0 < --argc && (*++argv)[0] == '-') {
+		for (s = argv[0] + 1; *s != '\0'; s++) {
+			switch (*s) {
+				case 'n':
+					/* begins going into NTLM mode */
+					*args |= TYPE_NTLM;
+					break;
+				case 'l':
+					*args |= TYPE_LM;
+					break;
+
+				case 'h':
+					print_help();
+					argc = 0;
+					break;
+			}
+		}
+	}
+
+	/* these are filters to the program */
+	if (*args != (*args & -*args)) {
+		printf("Error: More than one arg set\n");
+		*args = 0;
+	}
+}
+
+void print_help()
+{
+	printf("Help text should go here\n");
+	printf("Preferably as one giant string, then plastered in one printf\n");
+	printf("statement\n");
 }
