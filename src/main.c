@@ -23,6 +23,8 @@
 #include "LMhash.h"
 #include "sqlite3.h"
 
+#include "supported_algo_tbl.h"
+
 /* maximum values */
 #define BUFFER_SIZE  1024
 #define MAX_WORD_LEN 14
@@ -317,15 +319,12 @@ void parse_args(int argc, char **argv, unsigned int *args)
 	while (0 < --argc && (*++argv)[0] == '-') {
 		for (s = argv[0] + 1; *s != '\0'; s++) {
 			switch (*s) {
-				case 'n':
-					/* begins going into NTLM mode */
-					*args |= TYPE_NTLM;
-					break;
-				case 'l':
-					*args |= TYPE_LM;
-					break;
+				/* 
+				 * we use the supported algo table to determine what
+				 * values are set here
+				 */
 
-				case 'h':
+				case 'h': /* unless you want the help */
 					print_help();
 					argc = 0;
 					break;
