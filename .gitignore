@@ -4,3 +4,5 @@ passes.db*
 # ignore my ctags
 tags
 types_c*
+
+*.o
