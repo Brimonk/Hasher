@@ -28,6 +28,7 @@
 
 #define TYPE_LM     0X01
 #define TYPE_NTLM   0x02
+#define TYPE_MD4    0X04
 
 void print_to_stdout(char *type, unsigned char *hash, char *plaintext);
 void buff_to_upper(unsigned char *dest, unsigned char *source, int max);
@@ -73,6 +74,11 @@ int main(int argc, char **argv)
 
 		/* copy to final buffer, to not lose plaintext */
 		memcpy(plain, buffer, strlen((char *)buffer));
+
+		/* do MD5 */
+		if (type & TYPE_MD5) {
+			/* put hash back */
+		}
 
 		/* do LMhashing */
 		if (type & TYPE_LM) {
