@@ -1,8 +1,8 @@
 CC := cc
 SOURCES := $(wildcard src/*.c)
 OBJECTS := $(SOURCES:.c=.o)
-LINKER  := -lpthread -ldl
-ARGS   := -Wall
+LINKER  := 
+ARGS   := -Wall -march=native
 DEBUGARGS   := -g3
 TARGET := hasher
 
