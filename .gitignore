@@ -1,4 +1,5 @@
 hasher
+dictgen
 passes.db*
 
 # ignore my ctags

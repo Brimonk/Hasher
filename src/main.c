@@ -1,12 +1,8 @@
 /* 
+ * Brian Chrzanowski
  * Wed Nov 23, 2016 00:11
  *
- * nt/lm password lookup creation
- *
- * TODO
- *
- *	buffer input from stdin
- *	multiple threads
+ * Password Hashing via CPU Suite
  */
 
 #include <stdio.h>
@@ -17,6 +13,7 @@
 #include <ctype.h>
 #include <stdint.h>
 
+#include "common.h"
 #include "DES.h"
 #include "MD4.h"
 #include "MD5.h"
@@ -25,121 +22,65 @@
 #define USAGE "USAGE : %s [-l -n] [-h] [plain, packed]\nUse -h for more help\n"
 
 /* maximum values */
-#define BUFFER_SIZE  1024
-#define MAX_WORD_LEN 14
+#define BUFFER_SIZE  128
 
-#define TYPE_LM     0X01
-#define TYPE_NTLM   0x02
-#define TYPE_MD4    0X04
+#define TYPE_LM     1
+#define TYPE_NTLM   2
+#define TYPE_MD4    3
 
-void buff_to_upper(unsigned char *dest, unsigned char *source, int max);
-void char_ptrs_clear(char **ptrs, int length);
+void buff_to_upper(char *dest, char *source, int max);
 int mk_readable(unsigned char *hash, int buflen);
 
 void parse_args(int argc, char **argv, unsigned int *args);
+void lm_helper(uint8 *dst, uint8 *src, const int32 len);
+void ntlm_helper(uint8 *dst, uint8 *src, const int32 len);
 void print_help();
 
 /* -------------------------------------------------------------------------- */
 int main(int argc, char **argv)
 {
 	int len, i, max;
-	unsigned int args;
-	char plain[BUFFER_SIZE];
+	unsigned int type;
 
-	char *ptrs[16] = {0};
+	void (*hash_funcs[3]) (uint8 *dest, uint8 *src, const int32 length) = {
+		lm_helper,
+		ntlm_helper
+	};
 	
-	char plainbuffer[BUFFER_SIZE];
-	unsigned char buffer[BUFFER_SIZE];
-	unsigned char dest[BUFFER_SIZE];
-	unsigned char lmdest[BUFFER_SIZE];
+	char inbuf[BUFFER_SIZE];
+	char outbuf[BUFFER_SIZE];
 
-	args = 0;
-	parse_args(argc, argv, &args);
+	type = 0;
+	parse_args(argc, argv, &type);
 
-	if (!args) {
+	if (!type) { // if they selected no type
 		return 0;
 	}
 
-	ptrs[0] = (char *)&buffer[0];
-	ptrs[1] = (char *)&dest[0];
-	ptrs[2] = (char *)&plain[0];
-	ptrs[3] = (char *)&lmdest[0];
+	memset(inbuf, 0, BUFFER_SIZE);
+	memset(outbuf, 0, BUFFER_SIZE);
 
-	char_ptrs_clear(&ptrs[0], 4);
-	for (i = 1; fgets((char *)buffer, BUFFER_SIZE, stdin) == (char *)buffer;
-			i++) {
-		if ('\n' == buffer[len - 1])
-			buffer[len--] = '\0';
+	for (i = 1; fgets(inbuf, BUFFER_SIZE, stdin) == inbuf; i++) {
 
-		memcpy(plainbuffer, buffer, BUFFER_SIZE);
-		len = (strlen((char *)buffer) > 14) ? 14 : strlen((char *)buffer);
-
-		if ('\n' == buffer[len - 1])
-			buffer[len--] = '\0';
-
-		max = (len > 14) ? 14 : len;
-		buffer[max] = 0;
-
-		/* copy to final buffer, to not lose plaintext */
-		memcpy(plain, buffer, strlen((char *)buffer));
-
-		/* do LMhashing */
-		buff_to_upper(&lmdest[0], &buffer[0], max);
-		auth_LMhash((unsigned char *)&lmdest[0], (unsigned char *)lmdest, len);
-		mk_readable(&lmdest[0], BUFFER_SIZE);
-
-		/* do NTLM hashing */
-		max = (len > (BUFFER_SIZE / 2) ? (BUFFER_SIZE / 2) : len);
-		buffer[(2 * max) - 1] = 0;
-
-		for (i = max - 1; i > 0; i--) {
-			buffer[(i * 2)] = buffer[i];
-			buffer[(i * 2) - 1] = 0;
+		len = strlen(inbuf);
+		if ('\n' == inbuf[len - 1]) {
+			inbuf[len--] = '\0';
 		}
 
-		auth_md4Sum(dest, buffer, 2 * max);
-		mk_readable(&dest[0], BUFFER_SIZE);
+		// perform the algorithm
+		hash_funcs[type]((uint8 *)outbuf, (uint8 *)inbuf, len);
 
 		// print out the result
-		printf("%s:%s\n", lmdest, plain);
+		printf("%s:%s\n", outbuf, inbuf);
 
-		/* clear buffers */
-		char_ptrs_clear(&ptrs[0], 4);
+		memset(inbuf, 0, BUFFER_SIZE);
+		memset(outbuf, 0, BUFFER_SIZE);
 	}
 
 	return 0;
 }
 
-void char_ptrs_clear(char **ptrs, int length)
-{
-	int i;
-
-	for (i = 0; i < length; i++) {
-		memset(ptrs[i], 0, BUFFER_SIZE);
-	}
-}
-
-int mk_readable(unsigned char *hash, int buflen)
-{
-	/* make minimal syscalls. Use buffers for performance! */
-	char buf[BUFFER_SIZE];
-	int i, j;
-
-	if (buflen < BUFFER_SIZE) {
-		return 1;
-	}
-
-	for (j = 0, i = 0; j < 16; i += 2, j++) {
-		sprintf(&buf[i], "%.2X", (unsigned char)hash[j]);
-	}
-
-	memset(hash, 0, buflen);
-	memcpy(hash, buf, buflen);
-
-	return 0;
-}
-
-void buff_to_upper(unsigned char *dest, unsigned char *source, int max)
+void buff_to_upper(char *dest, char *source, int max)
 {
 	/* converts all bytes in buffer to upper case */
 	int i;
@@ -183,5 +124,14 @@ void print_help()
 {
 	fprintf(stderr, "Help Text Here\n");
 	exit(1);
+}
+
+// helper functions to wrap up each algorithm in a nice bow
+void ntlm_helper(uint8 *dest, uint8 *src, const int32 len)
+{
+}
+
+void lm_helper(uint8 *dst, uint8 *src, const int32 len)
+{
 }
 
